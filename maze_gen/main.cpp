@@ -6,17 +6,21 @@
 #define pf push_front
 #define DIR "tests/"
 #define MAXN 250
-#define MAXP 2
-#define MINP 2
+#define MAXPr 2                     //default: Free-2 branching - really free, an RD path usually always works, suboptimal
+#define MINPr 2                     //Pr means "paths random"
 #define _E 0
 #define _N 1
 #define _W 2
 #define _S 3
 #define wall "#"
-#define weak (0)
-#define strict (1)
+#define weak (0)                    //fine but could be better
+#define strict (1)                  //bad for 1-path-mazes, quite rigid, nearly ideal for 2-path-mazes
+#define gauss (0)                   //bad for 1-path-mazes, interesting structure, good for 2-path mazes
+#define inverse_gauss (0)           //bad for 1-path mazes, a bit free for 2-paths
 #define strict_bias ((double)0.1)
 #define weak_bias ((double)0.4)
+#define gauss_bias ((double)0.15)
+#define gauss_weight (0.25)
 #define frand() ((double)(rand())/(RAND_MAX))
 using namespace std;
 int encode(int n, int m)
@@ -136,16 +140,31 @@ struct maze123
             found_end=1;
             return;
         }
-        //weak branching: if we already have a path, we have a chance to stop
-        if(weak&&found_end&&frand()<weak_bias)
+
+        //begin branching
         {
-            return;
+            //weak branching: if we already have a path, we have a chance to stop
+            if(weak&&found_end&&frand()<weak_bias)
+            {
+                return;
+            }
+            //strict branching: prioritise branching near the start
+            if(strict&&found_end&&frand()*strict_bias<(double)current_path.size()/(N*M))
+            {
+                return;
+            }
+            //branching based on the Gaussian distribution: prioritise branching in the middle
+            if(gauss&&found_end&&frand()*gauss_bias<1.0-(double)exp((-(4.0)*gauss_weight/(N*N+M*M))*(((x-(N/2))*(x-(N/2)))+((y-(M/2))*(y-(M/2))))))
+            {
+                return;
+            }
+            //branching based on the Gaussian distribution, prioritise extremities (S/F)
+            if(inverse_gauss&&found_end&&frand()*gauss_bias<(double)exp((-(4.0)*gauss_weight/(N*N+M*M))*(((x-(N/2))*(x-(N/2)))+((y-(M/2))*(y-(M/2))))))
+            {
+                return;
+            }
         }
-        //strict branching: prioritise branching near the start
-        if(strict&&found_end&&frand()*strict_bias<(double)current_path.size()/(N*M))
-        {
-            return;
-        }
+        //end branching
 
         //randomise order of if statements
         vector<int>permute={1,2,3,4};
@@ -223,7 +242,7 @@ struct maze123
     }
     void regen()
     {
-        paths_count = (rand() % (MAXP-MINP+1)) + MINP;
+        paths_count = (rand() % (MAXPr-MINPr+1)) + MINPr;
         paths.clear();
         lengths.clear();
         f(i,0,N-1)
