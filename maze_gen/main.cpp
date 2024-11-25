@@ -12,6 +12,8 @@
 #define _W 2
 #define _S 3
 #define wall "#"
+#define stop_bias ((double)0.4)
+#define frand() ((double)(rand())/(RAND_MAX))
 using namespace std;
 int encode(int n, int m)
 {
@@ -119,7 +121,7 @@ struct maze123
         if(x<0||y<0||x>=N||y>=M)return 0;
         return 1;
     }
-    void dfs(int x, int y, int xf, int yf, int len, vector<int>&current_path)
+    void dfs(int x, int y, int xf, int yf, int len, vector<int>&current_path, bool&found_end)
     {
         visited[x][y]=1;
         current_path.pb(encode(x,y));
@@ -127,8 +129,16 @@ struct maze123
         {
             paths.pb(current_path);
             lengths.pb(len);
+            found_end=1;
             return;
         }
+        //if we already have a path, we have a chance to stop
+        if(found_end&&frand()<stop_bias)
+        {
+            cout<<"Hi"<<endl;
+            return;
+        }
+
         //randomise order of if statements
         vector<int>permute={1,2,3,4};
         random_shuffle(permute.begin(),permute.end());
@@ -146,7 +156,7 @@ struct maze123
                             adj_matrix[x][y][_S]=(rand()%3)+1;
                             adj_matrix[x+1][y][_N]=adj_matrix[x][y][_S];
                         }
-                        dfs(x+1,y,xf,yf,len+adj_matrix[x+1][y][_N],current_path);
+                        dfs(x+1,y,xf,yf,len+adj_matrix[x+1][y][_N],current_path,found_end);
                     }
                     //only one path per iteration of dfs; place walls
                     //regen() takes care of placing zeroes at the beginning
@@ -164,7 +174,7 @@ struct maze123
                             adj_matrix[x][y][_N]=(rand()%3)+1;
                             adj_matrix[x-1][y][_S]=adj_matrix[x][y][_N];
                         }
-                        dfs(x-1,y,xf,yf,len+adj_matrix[x-1][y][_S],current_path);
+                        dfs(x-1,y,xf,yf,len+adj_matrix[x-1][y][_S],current_path,found_end);
                     }
                 }
             }
@@ -179,7 +189,7 @@ struct maze123
                             adj_matrix[x][y][_E]=(rand()%3)+1;
                             adj_matrix[x][y+1][_W]=adj_matrix[x][y][_E];
                         }
-                        dfs(x,y+1,xf,yf,len+adj_matrix[x][y+1][_W],current_path);
+                        dfs(x,y+1,xf,yf,len+adj_matrix[x][y+1][_W],current_path,found_end);
                     }
                 }
             }
@@ -194,7 +204,7 @@ struct maze123
                             adj_matrix[x][y][_W]=(rand()%3)+1;
                             adj_matrix[x][y-1][_E]=adj_matrix[x][y][_W];
                         }
-                        dfs(x,y-1,xf,yf,len+adj_matrix[x][y-1][_E],current_path);
+                        dfs(x,y-1,xf,yf,len+adj_matrix[x][y-1][_E],current_path,found_end);
                     }
                 }
             }
@@ -224,7 +234,8 @@ struct maze123
                 visited[i][j]=0;
             }
             vector<int>v={};
-            dfs(0,0,N-1,M-1,0,v);
+            bool b=0;
+            dfs(0,0,N-1,M-1,0,v,b);
         }
         return;
     }
