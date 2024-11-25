@@ -7,12 +7,16 @@
 #define DIR "tests/"
 #define MAXN 250
 #define MAXP 2
+#define MINP 2
 #define _E 0
 #define _N 1
 #define _W 2
 #define _S 3
 #define wall "#"
-#define stop_bias ((double)0.4)
+#define weak (0)
+#define strict (1)
+#define strict_bias ((double)0.1)
+#define weak_bias ((double)0.4)
 #define frand() ((double)(rand())/(RAND_MAX))
 using namespace std;
 int encode(int n, int m)
@@ -132,10 +136,14 @@ struct maze123
             found_end=1;
             return;
         }
-        //if we already have a path, we have a chance to stop
-        if(found_end&&frand()<stop_bias)
+        //weak branching: if we already have a path, we have a chance to stop
+        if(weak&&found_end&&frand()<weak_bias)
         {
-            cout<<"Hi"<<endl;
+            return;
+        }
+        //strict branching: prioritise branching near the start
+        if(strict&&found_end&&frand()*strict_bias<(double)current_path.size()/(N*M))
+        {
             return;
         }
 
@@ -215,7 +223,7 @@ struct maze123
     }
     void regen()
     {
-        paths_count = (rand() % MAXP) + 1;
+        paths_count = (rand() % (MAXP-MINP+1)) + MINP;
         paths.clear();
         lengths.clear();
         f(i,0,N-1)
@@ -243,7 +251,7 @@ struct maze123
 int main()
 {
     srand(time(0));
-    maze123 M(10,10);
+    maze123 M(20,20);
     M.see();
     M.see_paths();
     return 0;
