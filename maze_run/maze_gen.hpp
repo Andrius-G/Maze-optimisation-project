@@ -8,7 +8,6 @@
 #define MAXN 250
 #define MAXPr 2                     //default: Free-2 branching - really free, an RD path usually always works, suboptimal
 #define MINPr 2                     //Pr means "paths random"
-#define EXTRA_P 500
 #define _E 0
 #define _N 1
 #define _W 2
@@ -23,15 +22,13 @@
 #define gauss_bias ((double)0.15)
 #define gauss_weight (0.25)
 #define frand() ((double)(rand())/(RAND_MAX))
+
 using namespace std;
-int encode(int n, int m)
-{
-    return (n*MAXN)+m;
-}
-array<int,2> decode(int n)
-{
-    return {n/MAXN,n-(n/MAXN)};
-}
+
+int encode(int n, int m);
+
+array<int,2> decode(int n);
+
 struct maze123
 {
     int N, M;
@@ -241,89 +238,6 @@ struct maze123
         current_path.pop_back();
         return;
     }
-    void add_dfs(int x, int y, int xf, int yf, int len, vector<int>&current_path, bool&found_end)
-    {
-        if(found_end)return;
-        visited[x][y]=1;
-        current_path.pb(encode(x,y));
-        if(x==xf&&y==yf)
-        {
-            paths.pb(current_path);
-            lengths.pb(len);
-            found_end=1;
-            return;
-        }
-
-        //randomise order of if statements
-        vector<int>permute={1,2,3,4};
-        random_shuffle(permute.begin(),permute.end());
-        //loads of if statements for dfs
-        for(auto u: permute)
-        {
-            if(u==1) //case 1
-            {
-                if(in_bounds(x+1,y)) //increase x <-> go south
-                {
-                    if(!visited[x+1][y])
-                    {
-                        if(!adj_matrix[x][y][_S]) //if there is no edge, continue
-                        {
-                            continue;
-                        }
-                        add_dfs(x+1,y,xf,yf,len+adj_matrix[x+1][y][_N],current_path,found_end);
-                    }
-                    //only one path per iteration of dfs; place walls
-                    //regen() takes care of placing zeroes at the beginning
-                    //in case a previous path went through x,y <-> x+1,y, we don't reset the edge weight here
-                }
-            }
-            else if(u==2)
-            {
-                if(in_bounds(x-1,y))
-                {
-                    if(!visited[x-1][y])
-                    {
-                        if(!adj_matrix[x][y][_N])
-                        {
-                            continue;
-                        }
-                        add_dfs(x-1,y,xf,yf,len+adj_matrix[x-1][y][_S],current_path,found_end);
-                    }
-                }
-            }
-            else if(u==3)
-            {
-                if(in_bounds(x,y+1))
-                {
-                    if(!visited[x][y+1])
-                    {
-                        if(!adj_matrix[x][y][_E])
-                        {
-                            continue;
-                        }
-                        add_dfs(x,y+1,xf,yf,len+adj_matrix[x][y+1][_W],current_path,found_end);
-                    }
-                }
-            }
-            else
-            {
-                if(in_bounds(x,y-1))
-                {
-                    if(!visited[x][y-1])
-                    {
-                        if(!adj_matrix[x][y][_W])
-                        {
-                            continue;
-                        }
-                        add_dfs(x,y-1,xf,yf,len+adj_matrix[x][y-1][_E],current_path,found_end);
-                    }
-                }
-            }
-        }
-        //endifs
-        current_path.pop_back();
-        return;
-    }
     void regen()
     {
         paths_count = (rand() % (MAXPr-MINPr+1)) + MINPr;
@@ -348,26 +262,6 @@ struct maze123
             bool b=0;
             dfs(0,0,N-1,M-1,0,v,b);
         }
-        paths_count = EXTRA_P;
-        f(i,1,paths_count)
-        {
-            f(i,0,N-1)
-            f(j,0,M-1)
-            {
-                visited[i][j]=0;
-            }
-            vector<int>v={};
-            bool b=0;
-            add_dfs(0,0,N-1,M-1,0,v,b);
-        }
         return;
     }
 };
-int main()
-{
-    srand(time(0));
-    maze123 M(20,20);
-    M.see();
-    M.see_paths();
-    return 0;
-}
