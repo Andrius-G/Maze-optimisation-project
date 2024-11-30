@@ -9,6 +9,7 @@
 #define MAXN 250
 #define MAXPr 2                     //default: Free-2 branching - really free, an RD path usually always works, suboptimal
 #define MINPr 2                     //Pr means "paths random"
+#define EXTRA_P 50
 #define _E 0
 #define _N 1
 #define _W 2
