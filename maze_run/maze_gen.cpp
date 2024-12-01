@@ -31,6 +31,6 @@ int encode(int n, int m)
 }
 array<int,2> decode(int n)
 {
-    return {n/MAXN,n-(n/MAXN)};
+    return {n/MAXN,n-(MAXN*(n/MAXN))};
 }
 
