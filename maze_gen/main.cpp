@@ -366,8 +366,8 @@ struct maze123
 int main()
 {
     srand(time(0));
-    maze123 M(20,20);
+    maze123 M(5,10);
     M.see();
-    M.see_paths();
+    //M.see_paths();
     return 0;
 }

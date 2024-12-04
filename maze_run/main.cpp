@@ -30,6 +30,8 @@
 #define pso_phi_g 1.1                  //social coefficient in [1,3]
 #define pso_inertia_weight 0.1         //less than 1
 #define PARTICLES 30
+#define PARTS 10
+#define SWARMS 15
 #define crossroad_chance 0.4           //if frand is less than this and deg cell <= 2, return
 #define crossroad_chance2 0.15         //if frand is less than this and deg cell <= 3, return
 // Note: This is **not** how you do a multiple-file program in C++.
@@ -123,6 +125,7 @@ vector<array<int,2>>rng_vec(int n, int m)
     random_shuffle(guesses.begin(),guesses.end());
     return guesses;
 }
+
 float pso(int n, int m) //the 'particles' are possible solutions.
 {
     vector<array<int,2>>G(GUESSES,{-1,-1}); //global best swarm position
@@ -1108,11 +1111,101 @@ float aco(int n, int m) //aco: use pheromone trails to prioritise good paths
     return best_ts;
 }
 
+vector<array<int,2>>gen_vec(int n, int m)
+{
+    vector<int>path={};
+    unordered_set<int>guesses={};
+    f(i,0,MAXN-1)
+    f(j,0,MAXN-1)
+    {
+        VISITED[i][j]=0;
+    }
+    bool b=0;
+    int c=0;
+    float ts=0;
+    improve_ts(0,0,b,c,ts,path);
+    for(auto u: path)
+    {
+        guesses.insert(u);
+    }
+    vector<array<int,2>>ggg={};
+    for(auto u: guesses)
+    {
+        ggg.pb(decode(u));
+    }
+    random_shuffle(ggg.begin(),ggg.end());
+    return ggg;
+}
+
+float pso_improve(int n, int m)
+{
+    vector<array<int,2>>G(GUESSES,{-1,-1}); //global best swarm position
+    vector<array<int,2>>x[PARTS]; //positions of particles
+    vector<array<int,2>>x_best[PARTS]; //best positions of particles
+    vector<array<float,2>>v[PARTS]; //velocities of particles
+    f(i,0,PARTS-1) // 10 particles
+    {
+        x[i] = gen_vec(n,m);
+        //taken from corners function above
+        while(x[i].size()<GUESSES)                    //if stack overflow happens here, check if N*M>=GUESSES
+        {
+            x[i].pb({rand()%(n/4),rand()%(m/4)});
+        }
+        x_best[i] = x[i];
+        if(total_score(convert_vii_to_us(x_best[i]))>total_score(convert_vii_to_us(G)))
+        {
+            G=x_best[i];
+        }
+        f(j,1,GUESSES)
+        {
+            float v_x=((frand())*(2*n))-n;
+            float v_y=((frand())*(2*m))-m;
+            v[i].pb({v_x,v_y});
+        }
+    }
+    f(k,0,SWARMS-1) // 15 iterations; adds up to 25 since we use 4 potions per iteration
+    {
+        f(i,0,PARTS-1)
+        {
+            f(d,0,GUESSES-1)
+            {
+                float& v_x = v[i][d][0];
+                float& v_y = v[i][d][1];
+                float r_p = frand(), r_g = frand(); //random cognitive and social parameters
+                //update velocity <-> move towards 'best' pos
+                v_x=(pso_inertia_weight*v_x)+(pso_phi_p*r_p*(x_best[i][d][0]-x[i][d][0]))+(pso_phi_g*r_g*(G[d][0]-x[i][d][0]));
+                v_y=(pso_inertia_weight*v_y)+(pso_phi_p*r_p*(x_best[i][d][1]-x[i][d][1]))+(pso_phi_g*r_g*(G[d][1]-x[i][d][1]));
+                //update particle position
+                x[i][d][0]+=v_x;
+                if(x[i][d][0]<0)x[i][d][0]=0;
+                if(x[i][d][0]>=n)x[i][d][0]=n-1;
+                x[i][d][1]+=v_y;
+                if(x[i][d][1]<0)x[i][d][1]=0;
+                if(x[i][d][1]>=n)x[i][d][1]=n-1;
+            }//update each dimension of particle
+            if(total_score(convert_vii_to_us(x[i]))>total_score(convert_vii_to_us(x_best[i])))
+            {
+                x_best[i]=x[i];
+                if(total_score(convert_vii_to_us(x_best[i]))>total_score(convert_vii_to_us(G)))
+                {
+                    G=x_best[i];
+                }
+            }
+        }
+    }
+    auto GG = convert_vii_to_us(G);
+    /*for(auto uwu: GG)
+    {
+        cout<<uwu<<" "<<decode(uwu)[0]<<" "<<decode(uwu)[1]<<"\n";
+    }*/
+    return total_score(GG);
+}
+
 int main()
 {
     //M.see();          //comment if laggy
     //M.see_paths();
-    {
+    /*{
         auto start = std::chrono::high_resolution_clock::now();
         cout<<random(100,100)<<"\n";
         auto finish = std::chrono::high_resolution_clock::now();
@@ -1125,7 +1218,7 @@ int main()
         auto finish = std::chrono::high_resolution_clock::now();
         auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
         cout<<"Time taken for 'pso': "<<duration_ms.count()/1000<<" miliseconds\n";
-    }*/
+    }
     {
         auto start = std::chrono::high_resolution_clock::now();
         cout<<multi_dfs(100,100)<<"\n";
@@ -1181,7 +1274,7 @@ int main()
         auto finish = std::chrono::high_resolution_clock::now();
         auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
         cout<<"Time taken for 'improve': "<<duration_ms.count()/1000<<" miliseconds\n";
-    }*/
+    }
     {
         auto start = std::chrono::high_resolution_clock::now();
         cout<<crossroad(100,100)<<"\n";
@@ -1196,12 +1289,19 @@ int main()
         auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
         cout<<"Time taken for 'checker': "<<duration_ms.count()/1000<<" miliseconds\n";
     }
-    {
+    /*{
         auto start = std::chrono::high_resolution_clock::now();
         cout<<aco(100,100)<<"\n";
         auto finish = std::chrono::high_resolution_clock::now();
         auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
         cout<<"Time taken for 'aco': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }*/
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<pso_improve(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'pso-improve': "<<duration_ms.count()/1000<<" miliseconds\n";
     }
     return 0;
 }
