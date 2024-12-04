@@ -679,7 +679,7 @@ void new_skip_dfs(int x, int y, bool &done, int& guess, vector<int>&current_path
         return;
     }
 
-void new_skip_aco_dfs(int x, int y, bool &done, int& guess, float& maxTotal, vector<int>&current_path, int direction_back)
+void new_skip_aco_dfs(int x, int y, bool &done, int& guess, float& maxTotal, vector<int>&current_path)
     {
         if(done)return;
         VISITED[x][y]=1;
@@ -701,97 +701,69 @@ void new_skip_aco_dfs(int x, int y, bool &done, int& guess, float& maxTotal, vec
             done=1;
             return;
         }
-        if(direction_back>=0&&!M.adj_matrix[x][y][direction_back])
-        {
-            //direction_back is the direction one has to go to go back to the cell where the dfs came from.
-            //so this basically tests if our checker strategy skipped too many nodes and hence has to backtrack
-
-            //not backtracking and just returning is bad (score \approx 0.01)
-            //so backtrack to one less
-
-            // since (x,y) and (x+2dx,y+2dy) exist, (x+dx,y+dy) also exists where dx,dy\in\{-1,0,1\}
-
-            if(direction_back==_N)
-            {
-                new_skip_aco_dfs(x-1,y,done,guess,maxTotal,current_path,-1);
-            }
-            if(direction_back==_S)
-            {
-                new_skip_aco_dfs(x+1,y,done,guess,maxTotal,current_path,-1);
-            }
-            if(direction_back==_E)
-            {
-                new_skip_aco_dfs(x,y+1,done,guess,maxTotal,current_path,-1);
-            }
-            if(direction_back==_W)
-            {
-                new_skip_aco_dfs(x,y-1,done,guess,maxTotal,current_path,-1);
-            }
-            return;
-        }
         //randomise order of if statements
         vector<pair<float,int>>permute;
-        if(M.in_bounds(x+2,y))permute.pb({pheromones[x+2][y],1});
-        if(M.in_bounds(x-2,y))permute.pb({pheromones[x-2][y],2});
-        if(M.in_bounds(x,y+2))permute.pb({pheromones[x][y+2],3});
-        if(M.in_bounds(x,y-2))permute.pb({pheromones[x][y-2],4});
+        if(M.in_bounds(x+1,y))permute.pb({pheromones[x+2][y],1});
+        if(M.in_bounds(x-1,y))permute.pb({pheromones[x-2][y],2});
+        if(M.in_bounds(x,y+1))permute.pb({pheromones[x][y+2],3});
+        if(M.in_bounds(x,y-1))permute.pb({pheromones[x][y-2],4});
         sort(permute.begin(),permute.end());
         //loads of if statements for dfs
         for(auto u: permute)
         {
             if(u.second==1) //case 1
             {
-                if(M.in_bounds(x+2,y)) //increase x <-> go south
+                if(M.in_bounds(x+1,y)) //increase x <-> go south
                 {
-                    if(!VISITED[x+2][y])
+                    if(!VISITED[x+1][y])
                     {
                         if(!M.adj_matrix[x][y][_S]) //if there is no edge, continue
                         {
                             continue;
                         }
-                        new_skip_aco_dfs(x+2,y,done,guess,maxTotal,current_path,_N);
+                        new_skip_aco_dfs(x+1,y,done,guess,maxTotal,current_path);
                     }
                 }
             }
             else if(u.second==2)
             {
-                if(M.in_bounds(x-2,y))
+                if(M.in_bounds(x-1,y))
                 {
-                    if(!VISITED[x-2][y])
+                    if(!VISITED[x-1][y])
                     {
                         if(!M.adj_matrix[x][y][_N])
                         {
                             continue;
                         }
-                        new_skip_aco_dfs(x-2,y,done,guess,maxTotal,current_path,_S);
+                        new_skip_aco_dfs(x-1,y,done,guess,maxTotal,current_path);
                     }
                 }
             }
             else if(u.second==3)
             {
-                if(M.in_bounds(x,y+2))
+                if(M.in_bounds(x,y+1))
                 {
-                    if(!VISITED[x][y+2])
+                    if(!VISITED[x][y+1])
                     {
                         if(!M.adj_matrix[x][y][_E])
                         {
                             continue;
                         }
-                        new_skip_aco_dfs(x,y+2,done,guess,maxTotal,current_path,_W);
+                        new_skip_aco_dfs(x,y+1,done,guess,maxTotal,current_path);
                     }
                 }
             }
             else
             {
-                if(M.in_bounds(x,y-2))
+                if(M.in_bounds(x,y-1))
                 {
-                    if(!VISITED[x][y-2])
+                    if(!VISITED[x][y-1])
                     {
                         if(!M.adj_matrix[x][y][_W])
                         {
                             continue;
                         }
-                        new_skip_aco_dfs(x,y-2,done,guess,maxTotal,current_path,_E);
+                        new_skip_aco_dfs(x,y-1,done,guess,maxTotal,current_path);
                     }
                 }
             }
@@ -1126,7 +1098,7 @@ float aco(int n, int m) //aco: use pheromone trails to prioritise good paths
         bool b=0;
         int c=0;
         float ff=0;
-        new_skip_aco_dfs(0,0,b,c,ff,path,-1);
+        new_skip_aco_dfs(0,0,b,c,ff,path);
         for(auto u: path)
         {
             guesses.insert(u);
