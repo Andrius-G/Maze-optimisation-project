@@ -30,6 +30,8 @@
 #define pso_phi_g 1.1                  //social coefficient in [1,3]
 #define pso_inertia_weight 0.1         //less than 1
 #define PARTICLES 30
+#define crossroad_chance 0.4           //if frand is less than this and deg cell <= 2, return
+#define crossroad_chance2 0.15         //if frand is less than this and deg cell <= 3, return
 // Note: This is **not** how you do a multiple-file program in C++.
 using namespace std;
 
@@ -45,6 +47,8 @@ public:
 static invoke_srand do_invoke_srand;
 
 int VISITED[MAXN+1][MAXN+1]={};
+
+float pheromones[MAXN+1][MAXN+1]={};
 
 maze123 M(100,100);
 
@@ -255,6 +259,103 @@ void new_random_dfs(int x, int y, bool &done, int& guess, vector<int>&current_pa
         //endifs
         return;
     }
+
+void new_crossroad_dfs(int x, int y, bool &done, int& guess, vector<int>&current_path)
+    {
+        if(done)return;
+        VISITED[x][y]=1;
+        current_path.pb(encode(x,y));
+        guess++;
+        if(guess>=GUESSES)
+        {
+            done=1;
+            return;
+        }
+        //randomise order of if statements
+        vector<int>permute={1,2,3,4};
+        random_shuffle(permute.begin(),permute.end());
+        //loads of if statements for dfs
+        int degree=0;
+        f(i,0,3)
+        {
+            if(M.adj_matrix[x][y][i])
+            {
+                degree++;
+            }
+        }
+        float prob=frand();
+        if(degree<=2&&prob<crossroad_chance)
+        {
+            return;
+        }
+        if(degree<=3&&prob<crossroad_chance2)
+        {
+            return;
+        }
+        //prioritise crossroads
+        for(auto u: permute)
+        {
+            if(u==1) //case 1
+            {
+                if(M.in_bounds(x+1,y)) //increase x <-> go south
+                {
+                    if(!VISITED[x+1][y])
+                    {
+                        if(!M.adj_matrix[x][y][_S]) //if there is no edge, continue
+                        {
+                            continue;
+                        }
+                        new_crossroad_dfs(x+1,y,done,guess,current_path);
+                    }
+                }
+            }
+            else if(u==2)
+            {
+                if(M.in_bounds(x-1,y))
+                {
+                    if(!VISITED[x-1][y])
+                    {
+                        if(!M.adj_matrix[x][y][_N])
+                        {
+                            continue;
+                        }
+                        new_crossroad_dfs(x-1,y,done,guess,current_path);
+                    }
+                }
+            }
+            else if(u==3)
+            {
+                if(M.in_bounds(x,y+1))
+                {
+                    if(!VISITED[x][y+1])
+                    {
+                        if(!M.adj_matrix[x][y][_E])
+                        {
+                            continue;
+                        }
+                        new_crossroad_dfs(x,y+1,done,guess,current_path);
+                    }
+                }
+            }
+            else
+            {
+                if(M.in_bounds(x,y-1))
+                {
+                    if(!VISITED[x][y-1])
+                    {
+                        if(!M.adj_matrix[x][y][_W])
+                        {
+                            continue;
+                        }
+                        new_crossroad_dfs(x,y-1,done,guess,current_path);
+                    }
+                }
+            }
+        }
+        //endifs
+        return;
+    }
+
 void new_single_dfs(int x, int y, bool &done, int& guess, int& potions, float& maxTotal, vector<int>&current_path)
     {
         if(done)return;
@@ -337,6 +438,442 @@ void new_single_dfs(int x, int y, bool &done, int& guess, int& potions, float& m
                             continue;
                         }
                         new_single_dfs(x,y-1,done,guess,potions,maxTotal,current_path);
+                    }
+                }
+            }
+        }
+        //endifs
+        return;
+    }
+
+void improve_ts(int x, int y, bool &done, int& guess, float& maxTotal, vector<int>&current_path)
+    {
+        if(done)return;
+        VISITED[x][y]=1;
+        current_path.pb(encode(x,y));
+        guess++;
+        if(guess>=GUESSES)
+        {
+            done=1;
+            return;
+        }
+        //randomise order of if statements
+        vector<int>permute={1,2,3,4};
+        int best_direction=-1;
+        random_shuffle(permute.begin(),permute.end());
+        //loads of if statements for dfs
+        for(auto u: permute)
+        {
+            if(u==1) //case 1
+            {
+                if(M.in_bounds(x+1,y)) //increase x <-> go south
+                {
+                    if(!VISITED[x+1][y])
+                    {
+                        if(!M.adj_matrix[x][y][_S]) //if there is no edge, continue
+                        {
+                            continue;
+                        }
+                        if(best_direction==-1)best_direction=_S;
+                        vector<int>vvv=current_path;
+                        vvv.pb(encode(x+1,y));
+                        float newTs=total_score(convert_v_to_us(vvv));
+                        if(newTs>maxTotal)
+                        {
+                            maxTotal=newTs;
+                            best_direction=_S;
+                        }
+                    }
+                }
+            }
+            else if(u==2)
+            {
+                if(M.in_bounds(x-1,y))
+                {
+                    if(!VISITED[x-1][y])
+                    {
+                        if(!M.adj_matrix[x][y][_N])
+                        {
+                            continue;
+                        }
+                        if(best_direction==-1)best_direction=_N;
+                        vector<int>vvv=current_path;
+                        vvv.pb(encode(x-1,y));
+                        float newTs=total_score(convert_v_to_us(vvv));
+                        if(newTs>maxTotal)
+                        {
+                            maxTotal=newTs;
+                            best_direction=_N;
+                        }
+                    }
+                }
+            }
+            else if(u==3)
+            {
+                if(M.in_bounds(x,y+1))
+                {
+                    if(!VISITED[x][y+1])
+                    {
+                        if(!M.adj_matrix[x][y][_E])
+                        {
+                            continue;
+                        }
+                        if(best_direction==-1)best_direction=_E;
+                        vector<int>vvv=current_path;
+                        vvv.pb(encode(x,y+1));
+                        float newTs=total_score(convert_v_to_us(vvv));
+                        if(newTs>maxTotal)
+                        {
+                            maxTotal=newTs;
+                            best_direction=_E;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if(M.in_bounds(x,y-1))
+                {
+                    if(!VISITED[x][y-1])
+                    {
+                        if(!M.adj_matrix[x][y][_W])
+                        {
+                            continue;
+                        }
+                        if(best_direction==-1)best_direction=_W;
+                        vector<int>vvv=current_path;
+                        vvv.pb(encode(x,y-1));
+                        float newTs=total_score(convert_v_to_us(vvv));
+                        if(newTs>maxTotal)
+                        {
+                            maxTotal=newTs;
+                            best_direction=_W;
+                        }
+                    }
+                }
+            }
+        }
+        if(best_direction==_S)
+        {
+            improve_ts(x+1,y,done,guess,maxTotal,current_path);
+        }
+        if(best_direction==_N)
+        {
+            improve_ts(x-1,y,done,guess,maxTotal,current_path);
+        }
+        if(best_direction==_E)
+        {
+            improve_ts(x,y+1,done,guess,maxTotal,current_path);
+        }
+        if(best_direction==_W)
+        {
+            improve_ts(x,y-1,done,guess,maxTotal,current_path);
+        }
+        //endifs
+        return;
+    }
+
+void new_skip_dfs(int x, int y, bool &done, int& guess, vector<int>&current_path, int direction_back)
+    {
+        if(done)return;
+        VISITED[x][y]=1;
+        current_path.pb(encode(x,y));
+        guess++;
+        if(guess>=GUESSES)
+        {
+            done=1;
+            return;
+        }
+        if(direction_back>=0&&!M.adj_matrix[x][y][direction_back])
+        {
+            //direction_back is the direction one has to go to go back to the cell where the dfs came from.
+            //so this basically tests if our checker strategy skipped too many nodes and hence has to backtrack
+
+            //not backtracking and just returning is bad (score \approx 0.01)
+            //so backtrack to one less
+
+            // since (x,y) and (x+2dx,y+2dy) exist, (x+dx,y+dy) also exists where dx,dy\in\{-1,0,1\}
+
+            if(direction_back==_N)
+            {
+                new_skip_dfs(x-1,y,done,guess,current_path,-1);
+            }
+            if(direction_back==_S)
+            {
+                new_skip_dfs(x+1,y,done,guess,current_path,-1);
+            }
+            if(direction_back==_E)
+            {
+                new_skip_dfs(x,y+1,done,guess,current_path,-1);
+            }
+            if(direction_back==_W)
+            {
+                new_skip_dfs(x,y-1,done,guess,current_path,-1);
+            }
+            return;
+        }
+        //randomise order of if statements
+        vector<int>permute={1,2,3,4};
+        random_shuffle(permute.begin(),permute.end());
+        //loads of if statements for dfs
+        for(auto u: permute)
+        {
+            if(u==1) //case 1
+            {
+                if(M.in_bounds(x+2,y)) //increase x <-> go south
+                {
+                    if(!VISITED[x+2][y])
+                    {
+                        if(!M.adj_matrix[x][y][_S]) //if there is no edge, continue
+                        {
+                            continue;
+                        }
+                        new_skip_dfs(x+2,y,done,guess,current_path,_N);
+                    }
+                }
+            }
+            else if(u==2)
+            {
+                if(M.in_bounds(x-2,y))
+                {
+                    if(!VISITED[x-2][y])
+                    {
+                        if(!M.adj_matrix[x][y][_N])
+                        {
+                            continue;
+                        }
+                        new_skip_dfs(x-2,y,done,guess,current_path,_S);
+                    }
+                }
+            }
+            else if(u==3)
+            {
+                if(M.in_bounds(x,y+2))
+                {
+                    if(!VISITED[x][y+2])
+                    {
+                        if(!M.adj_matrix[x][y][_E])
+                        {
+                            continue;
+                        }
+                        new_skip_dfs(x,y+2,done,guess,current_path,_W);
+                    }
+                }
+            }
+            else
+            {
+                if(M.in_bounds(x,y-2))
+                {
+                    if(!VISITED[x][y-2])
+                    {
+                        if(!M.adj_matrix[x][y][_W])
+                        {
+                            continue;
+                        }
+                        new_skip_dfs(x,y-2,done,guess,current_path,_E);
+                    }
+                }
+            }
+        }
+        //endifs
+        return;
+    }
+
+void new_skip_aco_dfs(int x, int y, bool &done, int& guess, float& maxTotal, vector<int>&current_path, int direction_back)
+    {
+        if(done)return;
+        VISITED[x][y]=1;
+        current_path.pb(encode(x,y));
+        //the aco step
+        float ff=total_score(convert_v_to_us(current_path));
+        if(ff>maxTotal)
+        {
+            maxTotal=ff;
+            pheromones[x][y]=(1.0+pheromones[x][y])/2;
+        }
+        else
+        {
+            pheromones[x][y]/=2;
+        }
+        guess++;
+        if(guess>=GUESSES)
+        {
+            done=1;
+            return;
+        }
+        if(direction_back>=0&&!M.adj_matrix[x][y][direction_back])
+        {
+            //direction_back is the direction one has to go to go back to the cell where the dfs came from.
+            //so this basically tests if our checker strategy skipped too many nodes and hence has to backtrack
+
+            //not backtracking and just returning is bad (score \approx 0.01)
+            //so backtrack to one less
+
+            // since (x,y) and (x+2dx,y+2dy) exist, (x+dx,y+dy) also exists where dx,dy\in\{-1,0,1\}
+
+            if(direction_back==_N)
+            {
+                new_skip_aco_dfs(x-1,y,done,guess,maxTotal,current_path,-1);
+            }
+            if(direction_back==_S)
+            {
+                new_skip_aco_dfs(x+1,y,done,guess,maxTotal,current_path,-1);
+            }
+            if(direction_back==_E)
+            {
+                new_skip_aco_dfs(x,y+1,done,guess,maxTotal,current_path,-1);
+            }
+            if(direction_back==_W)
+            {
+                new_skip_aco_dfs(x,y-1,done,guess,maxTotal,current_path,-1);
+            }
+            return;
+        }
+        //randomise order of if statements
+        vector<pair<float,int>>permute;
+        if(M.in_bounds(x+2,y))permute.pb({pheromones[x+2][y],1});
+        if(M.in_bounds(x-2,y))permute.pb({pheromones[x-2][y],2});
+        if(M.in_bounds(x,y+2))permute.pb({pheromones[x][y+2],3});
+        if(M.in_bounds(x,y-2))permute.pb({pheromones[x][y-2],4});
+        sort(permute.begin(),permute.end());
+        //loads of if statements for dfs
+        for(auto u: permute)
+        {
+            if(u.second==1) //case 1
+            {
+                if(M.in_bounds(x+2,y)) //increase x <-> go south
+                {
+                    if(!VISITED[x+2][y])
+                    {
+                        if(!M.adj_matrix[x][y][_S]) //if there is no edge, continue
+                        {
+                            continue;
+                        }
+                        new_skip_aco_dfs(x+2,y,done,guess,maxTotal,current_path,_N);
+                    }
+                }
+            }
+            else if(u.second==2)
+            {
+                if(M.in_bounds(x-2,y))
+                {
+                    if(!VISITED[x-2][y])
+                    {
+                        if(!M.adj_matrix[x][y][_N])
+                        {
+                            continue;
+                        }
+                        new_skip_aco_dfs(x-2,y,done,guess,maxTotal,current_path,_S);
+                    }
+                }
+            }
+            else if(u.second==3)
+            {
+                if(M.in_bounds(x,y+2))
+                {
+                    if(!VISITED[x][y+2])
+                    {
+                        if(!M.adj_matrix[x][y][_E])
+                        {
+                            continue;
+                        }
+                        new_skip_aco_dfs(x,y+2,done,guess,maxTotal,current_path,_W);
+                    }
+                }
+            }
+            else
+            {
+                if(M.in_bounds(x,y-2))
+                {
+                    if(!VISITED[x][y-2])
+                    {
+                        if(!M.adj_matrix[x][y][_W])
+                        {
+                            continue;
+                        }
+                        new_skip_aco_dfs(x,y-2,done,guess,maxTotal,current_path,_E);
+                    }
+                }
+            }
+        }
+        //endifs
+        return;
+    }
+
+void new_greedy_dfs(int x, int y, bool &done, int& guess, vector<int>&current_path)
+    {
+        if(done)return;
+        VISITED[x][y]=1;
+        current_path.pb(encode(x,y));
+        guess++;
+        if(guess>=GUESSES)
+        {
+            done=1;
+            return;
+        }
+        //greedily sort if statements
+        vector<array<int,2>>permute = {
+            {M.adj_matrix[x][y][_S],1},{M.adj_matrix[x][y][_N],2},
+            {M.adj_matrix[x][y][_E],3},{M.adj_matrix[x][y][_W],4}
+            };
+        sort(permute.begin(),permute.end());
+        //loads of if statements for dfs
+        //sorted by connectivity, so 0's will be skipped
+        for(auto u: permute)
+        {
+            if(u[1]==1) //case 1
+            {
+                if(M.in_bounds(x+1,y)) //increase x <-> go south
+                {
+                    if(!VISITED[x+1][y])
+                    {
+                        if(!M.adj_matrix[x][y][_S]) //if there is no edge, continue
+                        {
+                            continue;
+                        }
+                        new_greedy_dfs(x+1,y,done,guess,current_path);
+                    }
+                }
+            }
+            else if(u[1]==2)
+            {
+                if(M.in_bounds(x-1,y))
+                {
+                    if(!VISITED[x-1][y])
+                    {
+                        if(!M.adj_matrix[x][y][_N])
+                        {
+                            continue;
+                        }
+                        new_greedy_dfs(x-1,y,done,guess,current_path);
+                    }
+                }
+            }
+            else if(u[1]==3)
+            {
+                if(M.in_bounds(x,y+1))
+                {
+                    if(!VISITED[x][y+1])
+                    {
+                        if(!M.adj_matrix[x][y][_E])
+                        {
+                            continue;
+                        }
+                        new_greedy_dfs(x,y+1,done,guess,current_path);
+                    }
+                }
+            }
+            else
+            {
+                if(M.in_bounds(x,y-1))
+                {
+                    if(!VISITED[x][y-1])
+                    {
+                        if(!M.adj_matrix[x][y][_W])
+                        {
+                            continue;
+                        }
+                        new_greedy_dfs(x,y-1,done,guess,current_path);
                     }
                 }
             }
@@ -449,14 +986,159 @@ float single_dfs(int n, int m)
     return best_ts;
 }
 
+float skip_dfs(int n, int m)
+{
+    float best_ts=0;
+        f(q,1,POTIONS)
+        {
+            vector<int>path={};
+            unordered_set<int>guesses={};
+            f(i,0,MAXN-1)
+            f(j,0,MAXN-1)
+            {
+                VISITED[i][j]=0;
+            }
+            bool b=0;
+            int c=0;
+            new_skip_dfs(0,0,b,c,path,-1);
+            for(auto u: path)
+            {
+                guesses.insert(u);
+            }
+            best_ts=max(best_ts,total_score(guesses));
+        }
+    return best_ts;
+}
+
 float greedy(int n, int m)
 {
-    return 0;
+    float best_ts=0;
+        f(q,1,POTIONS)
+        {
+            vector<int>path={};
+            unordered_set<int>guesses={};
+            f(i,0,MAXN-1)
+            f(j,0,MAXN-1)
+            {
+                VISITED[i][j]=0;
+            }
+            bool b=0;
+            int c=0;
+            new_greedy_dfs(0,0,b,c,path);
+            for(auto u: path)
+            {
+                guesses.insert(u);
+            }
+            best_ts=max(best_ts,total_score(guesses));
+        }
+    return best_ts;
+}
+
+float improve(int n, int m)
+{
+    float best_ts=0;
+        f(q,1,POTIONS/4)
+        {
+            vector<int>path={};
+            unordered_set<int>guesses={};
+            f(i,0,MAXN-1)
+            f(j,0,MAXN-1)
+            {
+                VISITED[i][j]=0;
+            }
+            bool b=0;
+            int c=0;
+            float ts=0;
+            improve_ts(0,0,b,c,ts,path);
+            for(auto u: path)
+            {
+                guesses.insert(u);
+            }
+            best_ts=max(best_ts,total_score(guesses));
+        }
+    return best_ts;
+}
+
+float checker(int n, int m)
+{
+    float best_ts=0;
+    f(k,1,POTIONS)
+    {
+        unordered_set<int>guess_sequence={};
+        for(int i=0; (i<=100-k)&&guess_sequence.size()<GUESSES/2; ++i)
+            for(int j=0; (j<=k-1)&&guess_sequence.size()<GUESSES/2; ++j)
+                {
+                    if((i+j)%2)continue;
+                    guess_sequence.insert(encode(i,j));
+                }
+        for(int i=99; (i>=100-k)&&guess_sequence.size()<GUESSES/2; --i)
+            for(int j=99; (j>=k)&&guess_sequence.size()<GUESSES/2; --j)
+                {
+                    if((i+j)%2)continue;
+                    guess_sequence.insert(encode(i,j));
+                }
+        best_ts=max(total_score(guess_sequence),best_ts);
+    }
+    return best_ts;
+}
+
+float crossroad(int n, int m)
+{
+    float best_ts=0;
+        f(q,1,POTIONS)
+        {
+            vector<int>path={};
+            unordered_set<int>guesses={};
+            f(i,0,MAXN-1)
+            f(j,0,MAXN-1)
+            {
+                VISITED[i][j]=0;
+            }
+            bool b=0;
+            int c=0;
+            new_crossroad_dfs(0,0,b,c,path);
+            for(auto u: path)
+            {
+                guesses.insert(u);
+            }
+            best_ts=max(best_ts,total_score(guesses));
+        }
+    return best_ts;
+}
+
+float aco(int n, int m) //aco: use pheromone trails to prioritise good paths
+{
+    float best_ts=0;
+    f(i,0,n-1)
+    f(j,0,m-1)
+    {
+        pheromones[i][j]=0;
+    }
+    f(i,1,POTIONS)
+    {
+        vector<int>path={};
+        unordered_set<int>guesses={};
+        f(i,0,MAXN-1)
+        f(j,0,MAXN-1)
+        {
+            VISITED[i][j]=0;
+        }
+        bool b=0;
+        int c=0;
+        float ff=0;
+        new_skip_aco_dfs(0,0,b,c,ff,path,-1);
+        for(auto u: path)
+        {
+            guesses.insert(u);
+        }
+        best_ts=max(best_ts,total_score(guesses));
+    }
+    return best_ts;
 }
 
 int main()
 {
-    M.see();          //comment if laggy
+    //M.see();          //comment if laggy
     //M.see_paths();
     {
         auto start = std::chrono::high_resolution_clock::now();
@@ -506,6 +1188,48 @@ int main()
         auto finish = std::chrono::high_resolution_clock::now();
         auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
         cout<<"Time taken for 'single-dfs': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<skip_dfs(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'skip-dfs': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<greedy(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'greedy': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }
+    /*{
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<improve(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'improve': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }*/
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<crossroad(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'crossroad': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<checker(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'checker': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<aco(100,100)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'aco': "<<duration_ms.count()/1000<<" miliseconds\n";
     }
     return 0;
 }
