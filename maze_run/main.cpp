@@ -703,11 +703,11 @@ void new_skip_aco_dfs(int x, int y, bool &done, int& guess, float& maxTotal, vec
         }
         //randomise order of if statements
         vector<pair<float,int>>permute;
-        if(M.in_bounds(x+1,y))permute.pb({pheromones[x+2][y],1});
-        if(M.in_bounds(x-1,y))permute.pb({pheromones[x-2][y],2});
-        if(M.in_bounds(x,y+1))permute.pb({pheromones[x][y+2],3});
-        if(M.in_bounds(x,y-1))permute.pb({pheromones[x][y-2],4});
-        sort(permute.begin(),permute.end());
+        if(M.in_bounds(x+1,y))permute.pb({pheromones[x+1][y],1});
+        if(M.in_bounds(x-1,y))permute.pb({pheromones[x-1][y],2});
+        if(M.in_bounds(x,y+1))permute.pb({pheromones[x][y+1],3});
+        if(M.in_bounds(x,y-1))permute.pb({pheromones[x][y-1],4});
+        sort(permute.rbegin(),permute.rend());
         //loads of if statements for dfs
         for(auto u: permute)
         {
