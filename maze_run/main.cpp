@@ -408,7 +408,7 @@ float catalan(int n, int m)
     return best_ts;
 }
 
-float pattern(int n, int m) //doesn't instantly work for N,M \neq 100 \!
+float pattern(int n, int m, unsigned int x, unsigned int y)
 {
     float best_ts=0;
     f(i,1,POTIONS)
@@ -416,11 +416,11 @@ float pattern(int n, int m) //doesn't instantly work for N,M \neq 100 \!
         unordered_set<int>guess_sequence={};
         //35+35+30=100
         //top-left 1/4 x 1/4 bit
-        while(guess_sequence.size()<35)                    //if stack overflow happens here, check if N*M>=GUESSES
+        while(guess_sequence.size()<x)                    //if stack overflow happens here, check if N*M>=GUESSES
         {
             guess_sequence.insert(encode(rand()%(n/4),rand()%(m/4)));
         }
-        while(guess_sequence.size()<65)                    //if stack overflow happens here, check if N*M>=GUESSES
+        while(guess_sequence.size()<y)                    //if stack overflow happens here, check if N*M>=GUESSES
         {
             guess_sequence.insert(encode((n/4)+(rand()%(n/2)),(m/4)+(rand()%(m/2))));
         }
@@ -435,6 +435,11 @@ float pattern(int n, int m) //doesn't instantly work for N,M \neq 100 \!
 
 float single_dfs(int n, int m)
 {
+    f(i,0,MAXN-1)
+    f(j,0,MAXN-1)
+    {
+        VISITED[i][j]=0;
+    }
     bool b=0;
     int g=0;
     int p=0;
@@ -483,10 +488,17 @@ int main()
     }
     {
         auto start = std::chrono::high_resolution_clock::now();
-        cout<<pattern(100,100)<<"\n";
+        cout<<pattern(100,100,35,65)<<"\n";
         auto finish = std::chrono::high_resolution_clock::now();
         auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
         cout<<"Time taken for 'pattern': "<<duration_ms.count()/1000<<" miliseconds\n";
+    }
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        cout<<pattern(100,100,50,50)<<"\n";
+        auto finish = std::chrono::high_resolution_clock::now();
+        auto duration_ms = chrono::duration_cast<chrono::microseconds>(finish - start);
+        cout<<"Time taken for 'corners': "<<duration_ms.count()/1000<<" miliseconds\n";
     }
     {
         auto start = std::chrono::high_resolution_clock::now();
