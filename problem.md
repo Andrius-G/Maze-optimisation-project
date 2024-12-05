@@ -17,7 +17,7 @@ To help make decisions, you have invented a property of the revealed cells calle
 A ***good*** path is **any path which completes the maze**. A 123-maze will usually have multiple good paths. 
 The *score* of a **good path** is defined as the number of *revealed* nodes in the path divided by the travel time:
 
-$\mathrm{path_score} = \frac{\mathrm{path_revealed_nodes}}{\mathrm{path_travel_time}}$
+$\mathrm{path\_score} = \frac{\mathrm{path\_revealed\_nodes}}{\mathrm{path\_travel\_time}}$
 
 The ***total score*** of the maze is ***twice*** **the maximum** of all *scores* of good paths.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -29,7 +29,7 @@ After drinking a potion, you retain all previously received information about th
 
 When calculating your score, **only the hints asked in the most recent timeline are considered** since all other cells have not been *revealed* in the current timeline.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-**Conquer the 123-maze by maximising your** ***total score*****!**
+**Conquer the 123-maze by maximising your** ***total score***!
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 * *Note.
  You may play around with the problem as you see fit and change values 
