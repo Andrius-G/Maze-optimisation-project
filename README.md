@@ -23,8 +23,8 @@ To successfully run an algorithm, make sure it is uncommented in `main()`.
 
 ### `maze_run` implements $13$ different strategies to solve the presented problem:
 
-- `random` - pick `100` random cells per iteration until you run out of potions, take the best result
-- `pso` - particle swarm optimisation using `random` as base candidate solutions. Uses $30$ particles and $70$ attempts to improve their global `total_score`. Encodes each candidate solution as a *particle* -- a vector in $\mathbb{R}^200$
+- `random` - pick $100$ random cells per iteration until you run out of potions, take the best result
+- `pso` - particle swarm optimisation using `random` as base candidate solutions. Uses $30$ particles and $70$ attempts to improve their global `total_score`. Encodes each candidate solution as a *particle* -- a vector in $\mathbb{R}^{200}$
 - `multi-dfs` - starts multiple depth-first searches (choose random nodes to go next) starting from the top-left corner; chooses the one which gave max `total_score`
 - `catalan` - constructs Catalan-esque (bottom or right moves only) paths from the top-left corner towards the bottom-right corner; skips every other cell (checkered path).
 - `pattern` - chooses $35$ random cells in $0\le{x}<{\frac{N}{4}}, 0\le{y}<{\frac{M}{4}}$, $30$ random cells in ${\frac{N}{4}}\le{x}<{\frac{3N}{4}}, {\frac{M}{4}}\le{y}<{\frac{3M}{4}}$ and $35$ random cells in ${\frac{3N}{4}}\le{x}<N, {\frac{3M}{4}}\le{y}<M$ per iteration. Takes the best result; similar to `random`
@@ -34,7 +34,7 @@ To successfully run an algorithm, make sure it is uncommented in `main()`.
 - `greedy` - attempts to improve on `multi-dfs` by prioritising lower edge weights.
 - `improve` - perform a dfs while inspecting all of the neighbouring cells and choosing to go to the one which maximises your total_score next (random in case of a tie). Costs more nodes to construct a single full chain, hence lowering the amount of effective potions used to $\approx25$.
 - `crossroad` - attempts to improve on `multi-dfs` by prioritising crossroads.
-- `checker` - chooses 50 random cells in a checkerboard pattern each in the top-left and bottom-right corners. Random cells are chosen in the interiors of rectangles of varied sizes. Take the best result
+- `checker` - chooses $50$ random cells in a checkerboard pattern each in the top-left and bottom-right corners. Random cells are chosen in the interiors of rectangles of varied sizes. Take the best result
 - `aco` - depth-first search based ant colony optimisation algorithm. Trails of pheromones are left as ants walk across the maze. Similar to `multi-dfs`, but prioritises stronger pheromone trails.
 - `pso-improve` - combines `improve`, `checker`, and `aco` strategies to improve overall efficiency. Best strategy currently known to solve this problem as of yet.
 
