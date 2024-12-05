@@ -1,4 +1,5 @@
-While exploring, you encounter the legendary **123-maze** of dimensions **$N=100$** and **$M=100$**. 
+While exploring, you encounter the legendary **123-maze** of dimensions **$N=100$** and **$M=100$**.
+It is said that whoever finds the exit to the maze will have their deepest wishes granted.
 
 The entrance to the maze is at its **top-left corner**, and the exit out of the maze is at its **bottom-right** corner.
 
