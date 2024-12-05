@@ -17,7 +17,7 @@ To help make decisions, you have invented a property of the revealed cells calle
 A ***good*** path is **any path which completes the maze**. A 123-maze will usually have multiple good paths. 
 The *score* of a **good path** is defined as the number of *revealed* nodes in the path divided by the travel time:
 
-$\mathrm{path\_score} = \frac{\mathrm{path\_revealed\_nodes}}{\mathrm{path\_travel\_time}}$
+$\mathrm{path{\_}score} = \frac{\mathrm{path{\_}revealed{\_}nodes}}{\mathrm{path{\_}travel{\_}time}}$
 
 The ***total score*** of the maze is ***twice*** **the maximum** of all *scores* of good paths.
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
