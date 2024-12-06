@@ -31,7 +31,7 @@
 #define pso_inertia_weight 0.1         //less than 1
 #define PARTICLES 30
 #define PARTS 10
-#define SWARMS 15
+#define SWARMS 60
 #define crossroad_chance 0.4           //if frand is less than this and deg cell <= 2, return
 #define crossroad_chance2 0.15         //if frand is less than this and deg cell <= 3, return
 // Note: This is **not** how you do a multiple-file program in C++.
@@ -165,7 +165,7 @@ float pso(int n, int m) //the 'particles' are possible solutions.
                 if(x[i][d][0]>=n)x[i][d][0]=n-1;
                 x[i][d][1]+=v_y;
                 if(x[i][d][1]<0)x[i][d][1]=0;
-                if(x[i][d][1]>=n)x[i][d][1]=n-1;
+                if(x[i][d][1]>=m)x[i][d][1]=m-1;
             }//update each dimension of particle
             if(total_score(convert_vii_to_us(x[i]))>total_score(convert_vii_to_us(x_best[i])))
             {
@@ -1143,7 +1143,7 @@ float pso_improve(int n, int m)
     vector<array<int,2>>x[PARTS]; //positions of particles
     vector<array<int,2>>x_best[PARTS]; //best positions of particles
     vector<array<float,2>>v[PARTS]; //velocities of particles
-    f(i,0,PARTS-1) // 10 particles
+    f(i,0,PARTS-1) // 10 particles; each takes 4 potions to generate, so we actually have 60 potions left
     {
         x[i] = gen_vec(n,m);
         //taken from corners function above
@@ -1181,7 +1181,7 @@ float pso_improve(int n, int m)
                 if(x[i][d][0]>=n)x[i][d][0]=n-1;
                 x[i][d][1]+=v_y;
                 if(x[i][d][1]<0)x[i][d][1]=0;
-                if(x[i][d][1]>=n)x[i][d][1]=n-1;
+                if(x[i][d][1]>=m)x[i][d][1]=m-1;
             }//update each dimension of particle
             if(total_score(convert_vii_to_us(x[i]))>total_score(convert_vii_to_us(x_best[i])))
             {
